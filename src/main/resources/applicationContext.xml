@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
        xmlns:aop="http://www.springframework.org/schema/aop"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
                             http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-                            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd">
+                            http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+                            http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
 
 <!--   1.加载jdbc.properties数据源-->
     <context:property-placeholder location="classpath:jdbc.properties"/>
@@ -37,6 +39,33 @@
     <bean id="userDao" class="com.itheima.dao.Impl.UserDaoImpl">
         <property name="jdbcTemplate" ref="jdbcTemplate"/>
     </bean>
+<!--  配置accountDao  -->
+    <bean id="accountDao" class="com.itheima.dao.Impl.AccountDaoImpl">
+        <property name="jdbcTemplate" ref="jdbcTemplate"/>
+    </bean>
+<!--  配置accountService  -->
+<!--  目标对象，内部方法就是切点  -->
+    <bean id="accountService" class="com.itheima.service.Impl.AccountServiceImpl">
+        <property name="accountDao" ref="accountDao"/>
+    </bean>
+
+<!--  配置一个平台事务管理器  -->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+<!--  通知：事务的增强  -->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+<!--      设置事务的属性信息  -->
+        <tx:attributes>
+            <tx:method name="transfer" isolation="REPEATABLE_READ" propagation="REQUIRED" read-only="false"/>
+        </tx:attributes>
+    </tx:advice>
+<!--  配置事务的aop织入  -->
+    <aop:config>
+        <aop:advisor advice-ref="txAdvice" pointcut="execution(* com.itheima.service.Impl.*.*(..))"></aop:advisor>
+    </aop:config>
+    
+
 
 <!--  AOPdemo  -->
 <!--  目标对象  -->
